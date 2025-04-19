@@ -1,6 +1,10 @@
 # RedNote MCP Server
 
-## Configuration
+## Usage
+
+```shell
+git clone https://github.com/saltfishpr/mcp-servers.git
+```
 
 ```json
 {
@@ -8,6 +12,8 @@
         "git": {
             "command": "uv",
             "args": [
+                "--directory",
+                "/<path to mcp-servers git repo>",
                 "run",
                 "mcp-server-rednote"
             ]
