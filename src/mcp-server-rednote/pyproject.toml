@@ -1,0 +1,23 @@
+[project]
+name = "mcp-server-rednote"
+version = "0.1.0"
+description = "RedNote MCP Server"
+readme = "README.md"
+authors = [{ name = "saltfishpr", email = "526191197@qq.com" }]
+requires-python = ">=3.13"
+dependencies = [
+    "mcp[cli]>=1.0.0",
+    "pillow>=11.2.1",
+    "playwright>=1.51.0",
+    "pydantic>=2.0.0",
+]
+
+[project.scripts]
+mcp-server-rednote = "mcp_server_rednote:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["pytest-playwright>=0.7.0"]

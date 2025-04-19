@@ -1,0 +1,8 @@
+{
+    "python.testing.pytestArgs": [
+        ".",
+        "--headed"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
+}

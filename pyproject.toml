@@ -1,0 +1,6 @@
+[tool.uv.workspace]
+members = ["src/mcp-server-rednote"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
