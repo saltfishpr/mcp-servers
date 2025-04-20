@@ -11,7 +11,7 @@
 ```json
 {
     "mcpServers": {
-        "git": {
+        "rednote": {
             "command": "uvx",
             "args": [
                 "mcp-server-rednote"
