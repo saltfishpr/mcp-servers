@@ -39,47 +39,55 @@ class BaseBrowser:
             self._context = await self._browser.new_context(
                 storage_state=self._storage_state_path
             )
-            self.logger.info("加载会话成功")
+            self.logger.info("Session loaded successfully")
         except Exception as e:
-            self.logger.info(f"加载会话失败，创建新的会话: {e}")
+            self.logger.info(f"Failed to load session, creating a new one: {e}")
             self._context = await self._browser.new_context()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if self._context:
+            self.logger.info("Saving session...")
             await self._context.storage_state(path=self._storage_state_path)
             await self._context.close()
         if self._browser:
             await self._browser.close()
 
-    async def wait_for_content_stabilization(
+    async def new_page(self) -> Page:
+        if not self._context:
+            raise Exception("Browser context is not initialized.")
+        return await self._context.new_page()
+
+    async def wait_for_stabilization(
         self,
         page: Page,
         locator: Locator,
-        wait_timeout: int = 1000,
-        max_attempts: int = 10,
+        check_interval_ms: int = 1000,
+        retry_count: int = 10,
+        threshold: int = 2,
     ) -> bool:
         """
-        等待页面内容稳定
+        等待 locator.outerHTML 稳定
 
         Args:
             page (Page): Playwright 页面对象
             locator (Locator): 要检查的元素的 Locator 对象
-            wait_timeout (int): 等待时间，单位为毫秒
-            max_attempts (int): 最大尝试次数
+            wait_timeout (int): 单词检查时间间隔，单位为毫秒
+            max_attempts (int): 尝试次数
+            threshold (int): 稳定的阈值，表示连续相同的次数
         """
         previous_content: str = ""
         stable_count = 0
-        for _ in range(max_attempts):
-            current_content: str = await locator.evaluate("node => node.outerHTML")
+        for _ in range(retry_count):
+            current_content: str = await locator.evaluate("(e) => e.outerHTML")
 
             if current_content == previous_content:
                 stable_count += 1
-                if stable_count >= 2:  # 连续两次检查数量相同，认为稳定
+                if stable_count >= threshold:
                     return True
             else:
-                stable_count = 0
+                stable_count = stable_count // 2
 
             previous_content = current_content
-            await page.wait_for_timeout(wait_timeout)
+            await page.wait_for_timeout(check_interval_ms)
         return False

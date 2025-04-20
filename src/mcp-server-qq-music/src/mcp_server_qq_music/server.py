@@ -12,6 +12,7 @@ from .client import QQMusic
 class ServerTools(str, Enum):
     CHECK_LOGIN = "check_login"
     LOGIN = "login"
+    SEARCH_SONGS = "search_songs"
 
 
 class CheckLoginRequest(BaseModel):
@@ -20,6 +21,10 @@ class CheckLoginRequest(BaseModel):
 
 class LoginRequest(BaseModel):
     pass
+
+
+class SearchSongsRequest(BaseModel):
+    keyword: str
 
 
 async def serve(qq: QQMusic) -> None:
@@ -39,6 +44,11 @@ async def serve(qq: QQMusic) -> None:
                 description="登录QQ音乐",
                 inputSchema=LoginRequest.model_json_schema(),
             ),
+            Tool(
+                name=ServerTools.SEARCH_SONGS,
+                description="搜索歌曲，返回歌曲列表",
+                inputSchema=SearchSongsRequest.model_json_schema(),
+            ),
         ]
 
     @server.call_tool()
@@ -46,26 +56,40 @@ async def serve(qq: QQMusic) -> None:
         logger.info(f"Calling tool: {name} with arguments: {arguments}")
         match name:
             case ServerTools.CHECK_LOGIN:
-                try:
-                    page = await qq._context.new_page()
-                    await page.goto(QQMusic.BASE_URL)
-                    if await qq.is_user_logged_in(page=page):
-                        return [TextContent(type="text", text="已登录")]
-                    else:
-                        return [TextContent(type="text", text="未登录")]
-                except Exception as e:
-                    logger.error(f"Check login failed: {e}")
-                    return [TextContent(type="text", text="检查登录状态失败")]
-                finally:
-                    if page:
-                        await page.close()
+                if await qq.check_login():
+                    return [TextContent(type="text", text="已登录")]
+                else:
+                    return [TextContent(type="text", text="未登录")]
             case ServerTools.LOGIN:
                 try:
-                    await qq.login()
+                    page = await qq.new_page()
+                    await qq.login(page=page)
                     return [TextContent(type="text", text="登录成功")]
                 except Exception as e:
                     logger.error(f"Login failed: {e}")
                     return [TextContent(type="text", text="登录失败")]
+                finally:
+                    if page:
+                        await page.close()
+            case ServerTools.SEARCH_SONGS:
+                try:
+                    keyword = arguments["keyword"]
+                    if not keyword:
+                        return [TextContent(type="text", text="请输入搜索关键词")]
+                    page = await qq.new_page()
+                    songs = await qq.search_songs(page=page, keyword=keyword)
+                    return [
+                        TextContent(
+                            type="text",
+                            text="\n".join([song.model_dump_json() for song in songs]),
+                        )
+                    ]
+                except Exception as e:
+                    logger.error(f"Search songs failed: {e}")
+                    return [TextContent(type="text", text="搜索歌曲失败")]
+                finally:
+                    if page:
+                        await page.close()
             case _:
                 raise ValueError(f"Unknown tool: {name}")
 
