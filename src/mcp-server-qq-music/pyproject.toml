@@ -1,7 +1,7 @@
 [project]
-name = "mcp-server-rednote"
+name = "mcp-server-qq-music"
 version = "0.1.0"
-description = "RedNote MCP Server"
+description = "Add your description here"
 readme = "README.md"
 authors = [{ name = "saltfishpr", email = "saltfishpr@gmail.com" }]
 requires-python = ">=3.13"
@@ -9,13 +9,13 @@ license = "MIT"
 license-files = ["LICEN[CS]E*"]
 dependencies = [
     "mcp[cli]>=1.0.0",
-    "pillow>=11.2.1",
     "playwright>=1.51.0",
     "pydantic>=2.0.0",
+    "mcp-server-lib",
 ]
 
 [project.scripts]
-mcp-server-rednote = "mcp_server_rednote:main"
+mcp-server-qq-music = "mcp_server_qq_music:main"
 
 [build-system]
 requires = ["hatchling"]

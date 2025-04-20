@@ -4,7 +4,16 @@ requires-python = ">=3.13"
 
 [manifest]
 members = [
+    "mcp-server-lib",
+    "mcp-server-qq-music",
     "mcp-server-rednote",
+]
+
+[manifest.dependency-groups]
+dev = [
+    { name = "pyright", specifier = ">=1.1.399" },
+    { name = "pytest-playwright", specifier = ">=0.7.0" },
+    { name = "ruff", specifier = ">=0.11.6" },
 ]
 
 [[package]]
@@ -208,6 +217,36 @@ cli = [
 ]
 
 [[package]]
+name = "mcp-server-lib"
+version = "0.1.0"
+source = { editable = "src/mcp-server-lib" }
+dependencies = [
+    { name = "playwright" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "playwright", specifier = ">=1.51.0" }]
+
+[[package]]
+name = "mcp-server-qq-music"
+version = "0.1.0"
+source = { editable = "src/mcp-server-qq-music" }
+dependencies = [
+    { name = "mcp", extra = ["cli"] },
+    { name = "mcp-server-lib" },
+    { name = "playwright" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "mcp", extras = ["cli"], specifier = ">=1.0.0" },
+    { name = "mcp-server-lib", editable = "src/mcp-server-lib" },
+    { name = "playwright", specifier = ">=1.51.0" },
+    { name = "pydantic", specifier = ">=2.0.0" },
+]
+
+[[package]]
 name = "mcp-server-rednote"
 version = "0.1.0"
 source = { editable = "src/mcp-server-rednote" }
@@ -218,28 +257,12 @@ dependencies = [
     { name = "pydantic" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "pyright" },
-    { name = "pytest" },
-    { name = "pytest-playwright" },
-    { name = "ruff" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "mcp", extras = ["cli"], specifier = ">=1.0.0" },
     { name = "pillow", specifier = ">=11.2.1" },
     { name = "playwright", specifier = ">=1.51.0" },
     { name = "pydantic", specifier = ">=2.0.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pyright", specifier = ">=1.1.399" },
-    { name = "pytest", specifier = ">=8.3.5" },
-    { name = "pytest-playwright", specifier = ">=0.7.0" },
-    { name = "ruff", specifier = ">=0.11.6" },
 ]
 
 [[package]]
