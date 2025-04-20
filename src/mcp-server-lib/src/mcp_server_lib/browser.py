@@ -28,6 +28,7 @@ class BaseBrowser:
 
         if storage_state_path:
             self._storage_state_path = os.path.expanduser(storage_state_path)
+            self.logger.info(f"Storage state path: {self._storage_state_path}")
             directory = os.path.dirname(self._storage_state_path)
             os.makedirs(directory, exist_ok=True)
         self._browser = None
@@ -58,7 +59,7 @@ class BaseBrowser:
             raise Exception("Browser context is not initialized.")
         return await self._context.new_page()
 
-    async def wait_for_stabilization(
+    async def wait_for_stable(
         self,
         page: Page,
         locator: Locator,
@@ -76,17 +77,17 @@ class BaseBrowser:
             max_attempts (int): 尝试次数
             threshold (int): 稳定的阈值，表示连续相同的次数
         """
-        previous_content: str = ""
+        previous_content = ""
         stable_count = 0
         for _ in range(retry_count):
-            current_content: str = await locator.evaluate("(e) => e.outerHTML")
+            current_content = await locator.evaluate("e => e.outerHTML")
 
             if current_content == previous_content:
                 stable_count += 1
                 if stable_count >= threshold:
                     return True
             else:
-                stable_count = stable_count // 2
+                stable_count = stable_count = 0
 
             previous_content = current_content
             await page.wait_for_timeout(check_interval_ms)

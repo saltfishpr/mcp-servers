@@ -30,11 +30,11 @@ git clone https://github.com/saltfishpr/mcp-servers.git
 ```json
 {
     "mcpServers": {
-        "git": {
+        "rednote": {
             "command": "uv",
             "args": [
                 "--directory",
-                "/<path to mcp-servers git repo>",
+                "/<path to mcp-servers folder>",
                 "run",
                 "mcp-server-rednote"
             ]
