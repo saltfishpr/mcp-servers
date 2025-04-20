@@ -4,7 +4,7 @@ import logging
 
 from playwright.async_api import async_playwright
 
-from .rednote import RedNote
+from .client import QQMusic
 from .server import serve
 
 logging.basicConfig(
@@ -15,10 +15,10 @@ logging.basicConfig(
 
 def main():
     """Main entry point for the package."""
-    parser = argparse.ArgumentParser(description="RedNote MCP Server")
+    parser = argparse.ArgumentParser(description="QQ Music MCP Server")
     parser.add_argument(
         "--state_path",
-        default="~/.mcp/rednote/state.json",
+        default="~/.mcp/qq-music/state.json",
         help="Path to the browser state file",
     )
     args = parser.parse_args()
@@ -27,10 +27,12 @@ def main():
 
 async def async_main(storage_state_path: str) -> None:
     async with async_playwright() as p:
-        async with RedNote(
-            p, headless=False, storage_state_path=storage_state_path
-        ) as rednote:
-            await serve(rednote)
+        async with QQMusic(
+            playwright=p,
+            headless=False,
+            storage_state_path=storage_state_path,
+        ) as qq:
+            await serve(qq)
 
 
 if __name__ == "__main__":

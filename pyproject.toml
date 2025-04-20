@@ -1,6 +1,15 @@
-[tool.uv.workspace]
-members = ["src/mcp-server-rednote"]
+[tool.uv]
+package = false
 
-[tool.isort]
-profile = "black"
-line_length = 88
+[tool.uv.workspace]
+members = [
+    "src/mcp-server-rednote",
+    "src/mcp-server-qq-music",
+    "src/mcp-server-lib",
+]
+
+[tool.uv.sources]
+mcp-server-lib = { workspace = true }
+
+[dependency-groups]
+dev = ["pyright>=1.1.399", "pytest-playwright>=0.7.0", "ruff>=0.11.6"]
