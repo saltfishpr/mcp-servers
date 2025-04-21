@@ -203,8 +203,6 @@ def generate_version() -> int:
 def generate_matrix(directory: Path, git_hash: GitHash, pypi: bool, npm: bool) -> int:
     # Detect package type
     path = directory.resolve(strict=True)
-    version = gen_version()
-
     changes = []
     for package in find_changed_packages(path, git_hash):
         pkg = package.path.relative_to(path)

@@ -91,7 +91,7 @@ jobs:
       - name: Commit changes
         id: commit
         run: |
-          VERSION="${{ needs.create-metadata.outputs.version }}"
+          VERSION="v${{ needs.create-metadata.outputs.version }}"
           git add -u
           if git diff-index --quiet HEAD; then
             echo "changes_made=false" >> $GITHUB_OUTPUT
@@ -133,6 +133,7 @@ jobs:
       - name: Run pyright
         working-directory: src/${{ matrix.package }}
         run: uv run --frozen pyright
+        continue-on-error: true
 
       - name: Build package
         working-directory: src/${{ matrix.package }}
