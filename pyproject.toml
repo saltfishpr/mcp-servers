@@ -3,9 +3,9 @@ package = false
 
 [tool.uv.workspace]
 members = [
+    "libs/mcp-server-lib",
     "src/mcp-server-rednote",
     "src/mcp-server-qq-music",
-    "src/mcp-server-lib",
 ]
 
 [tool.uv.sources]
