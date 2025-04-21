@@ -12,6 +12,7 @@ dependencies = [
     "playwright>=1.51.0",
     "pydantic>=2.0.0",
     "mcp-server-lib",
+    "fastmcp>=2.2.1",
 ]
 
 [project.scripts]

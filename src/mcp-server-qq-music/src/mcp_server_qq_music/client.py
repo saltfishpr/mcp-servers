@@ -363,20 +363,6 @@ class QQMusic(BaseBrowser):
             replies.append(reply)
         return replies
 
-    async def __scroll_to_bottom(self, page: Page) -> None:
-        """
-        滚动到页面底部
-
-        Args:
-            page (Page): Playwright Page 对象
-        """
-        await page.evaluate(
-            """
-            window.scrollTo(0, document.body.scrollHeight);
-            """
-        )
-        await page.wait_for_timeout(1000)
-
 
 async def has_element(locator: Locator, selector: str) -> bool:
     return await locator.locator(selector).count() > 0
