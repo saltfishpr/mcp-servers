@@ -61,7 +61,7 @@ async def login(ctx: Context) -> str:
     """
     try:
         page = await get_app_context(ctx).rednote.new_page()
-        await get_app_context(ctx).rednote.login()
+        await get_app_context(ctx).rednote.login(page=page)
         return "登录成功"
     except Exception as e:
         logging.error(f"Login failed: {e}")

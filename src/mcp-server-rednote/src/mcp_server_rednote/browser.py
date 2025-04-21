@@ -29,7 +29,7 @@ class SearchNotesParams(BaseModel):
 class SearchNotesResult(BaseModel):
     data_idx: int  # 笔记索引
     title: str  # 笔记标题
-    cover: str  # 笔记封面
+    cover: str | None = None  # 笔记封面
     author: str  # 作者
     likes: str  # 点赞数
 
@@ -50,16 +50,12 @@ class RedNoteApiError(Exception):
         method: str,
         url: str,
         status_code: int,
-        code: int,
-        message: str,
-        body: str,
+        body: str | None = None,
     ):
-        super().__init__(message)
+        super().__init__("RedNote API Error")
         self.method = method
         self.url = url
         self.status_code = status_code
-        self.code = code
-        self.message = message
         self.body = body
 
     def __str__(self):
@@ -114,8 +110,6 @@ class RedNote(BaseBrowser):
                     method="get",
                     url=resp.url,
                     status_code=resp.status,
-                    code=code,
-                    message=respBody.get("message", ""),
                     body=respBody,
                 )
             if respBody.get("data", {}).get("guest", True):
@@ -156,9 +150,9 @@ class RedNote(BaseBrowser):
         # 如果src是URL，需要下载图片并转换
         elif qr_code_src:
             # 使用Playwright下载图片
-            async with page.request.get(qr_code_src) as response:
-                image_buffer = await response.body()
-                return base64.b64encode(image_buffer).decode("utf-8")
+            response = await page.request.get(qr_code_src)
+            image_buffer = await response.body()
+            return base64.b64encode(image_buffer).decode("utf-8")
         else:
             # 无法获取src时，尝试截图
             screenshot_buffer = await qrcode_element.screenshot()
