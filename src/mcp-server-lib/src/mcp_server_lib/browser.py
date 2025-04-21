@@ -3,7 +3,8 @@ import os
 
 from playwright.async_api import Browser, BrowserContext, Locator, Page, Playwright
 
-logger = logging.getLogger(__name__).addHandler(logging.NullHandler())
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 class BaseBrowser:
