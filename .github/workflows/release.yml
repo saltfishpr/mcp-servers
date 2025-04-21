@@ -137,7 +137,7 @@ jobs:
 
       - name: Build package
         working-directory: src/${{ matrix.package }}
-        run: uv build
+        run: uv build -o dist
 
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
