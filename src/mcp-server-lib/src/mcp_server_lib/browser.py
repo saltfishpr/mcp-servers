@@ -71,8 +71,8 @@ class BaseBrowser:
         Args:
             page (Page): Playwright 页面对象
             locator (Locator): 要检查的元素的 Locator 对象
-            wait_timeout (int): 单词检查时间间隔，单位为毫秒
-            max_attempts (int): 尝试次数
+            check_interval_ms (int): 单词检查时间间隔，单位为毫秒
+            retry_count (int): 尝试次数
             threshold (int): 稳定的阈值，表示连续相同的次数
         """
         previous_content = ""

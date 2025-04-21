@@ -9,8 +9,8 @@ license = "MIT"
 license-files = ["LICEN[CS]E*"]
 dependencies = [
     "mcp[cli]>=1.0.0",
-    "pillow>=11.2.1",
     "playwright>=1.51.0",
+    "mcp-server-lib",
     "pydantic>=2.0.0",
 ]
 

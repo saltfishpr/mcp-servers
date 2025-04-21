@@ -1,91 +1,90 @@
 import logging
-from enum import Enum
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from dataclasses import dataclass
 
-from mcp.server import Server
-from mcp.server.stdio import stdio_server
-from mcp.types import TextContent, Tool
-from pydantic import BaseModel
+from fastmcp import Context, FastMCP
+from playwright.async_api import async_playwright
 
 from .rednote import RedNote, SearchNotesParams
+from .settings import settings
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s",
+)
 
 
-class RedNoteTools(str, Enum):
-    CHECK_LOGIN = "check_login"
-    LOGIN = "login"
-    SEARCH_NOTES = "search_notes"
+@dataclass
+class AppContext:
+    rednote: RedNote
 
 
-class CheckLoginRequest(BaseModel):
-    pass
+@asynccontextmanager
+async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
+    async with async_playwright() as p:
+        async with RedNote(
+            playwright=p, headless=False, storage_state_path=settings.storage_state_path
+        ) as rednote:
+            yield AppContext(rednote=rednote)
 
 
-class LoginRequest(BaseModel):
-    pass
+mcp = FastMCP(
+    "mcp-server-rednote",
+    lifespan=app_lifespan,
+)
 
 
-class SearchNotesRequest(BaseModel):
-    keyword: str
-    limit: int = 10
+def get_app_context(ctx: Context) -> AppContext:
+    return ctx.request_context.lifespan_context
 
 
-async def serve(rednote: RedNote) -> None:
-    logger = logging.getLogger(__name__)
-    server = Server("mcp-server-rednote")
+@mcp.tool()
+async def check_login(ctx: Context) -> str:
+    """检查登录状态
 
-    @server.list_tools()
-    async def handle_list_tools() -> list[Tool]:
-        return [
-            Tool(
-                name=RedNoteTools.CHECK_LOGIN,
-                description="检查用户登录状态",
-                inputSchema=CheckLoginRequest.model_json_schema(),
-            ),
-            Tool(
-                name=RedNoteTools.LOGIN,
-                description="登录小红书",
-                inputSchema=LoginRequest.model_json_schema(),
-            ),
-            Tool(
-                name=RedNoteTools.SEARCH_NOTES,
-                description="搜索小红书笔记，返回笔记列表",
-                inputSchema=SearchNotesRequest.model_json_schema(),
-            ),
-        ]
+    Returns:
+        str: 登录状态
+    """
+    if await get_app_context(ctx).rednote.is_user_logged_in():
+        return "已登录"
+    else:
+        return "未登录"
 
-    @server.call_tool()
-    async def call_tool(name: str, arguments: dict) -> list[TextContent]:
-        logger.info(f"Calling tool: {name} with arguments: {arguments}")
-        match name:
-            case RedNoteTools.CHECK_LOGIN:
-                try:
-                    if await rednote.is_user_logged_in():
-                        return [TextContent(type="text", text="用户已登录")]
-                    else:
-                        return [TextContent(type="text", text="用户未登录")]
-                except Exception as e:
-                    logger.error(f"Check login failed: {e}")
-                    return [TextContent(type="text", text="检查登录状态失败")]
-            case RedNoteTools.LOGIN:
-                try:
-                    await rednote.login()
-                    await rednote.wait_for_login_success(timeout=60)
-                    return [TextContent(type="text", text="登录成功")]
-                except Exception as e:
-                    logger.error(f"Login failed: {e}")
-                    return [TextContent(type="text", text="登录失败")]
-            case RedNoteTools.SEARCH_NOTES:
-                try:
-                    page = await rednote.new_page("https://www.xiaohongshu.com/explore")
-                    notes = await rednote.search_notes(
-                        page=page, params=SearchNotesParams(**arguments)
-                    )
-                    return [TextContent(type="text", text=f"Notes:\n{notes}")]
-                except Exception as e:
-                    logger.error(f"Search notes failed: {e}")
-                    return [TextContent(type="text", text="搜索笔记失败")]
-            case _:
-                raise ValueError(f"Unknown tool: {name}")
 
-    options = server.create_initialization_options()
-    async with stdio_server() as (read_stream, write_stream):
-        await server.run(read_stream, write_stream, options, raise_exceptions=True)
+@mcp.tool()
+async def login(ctx: Context) -> str:
+    """登录小红书
+
+    Returns:
+        str: 操作结果
+    """
+    try:
+        await get_app_context(ctx).rednote.login()
+        await get_app_context(ctx).rednote.wait_for_login_success(timeout=60)
+        return "登录成功"
+    except Exception as e:
+        logging.error(f"Login failed: {e}")
+        return "登录失败"
+
+
+@mcp.tool()
+async def search_notes(ctx: Context, keyword: str, limit: int = 10) -> str:
+    """搜索小红书笔记
+
+    Args:
+        keyword (str): 搜索关键词
+        limit (int, optional): 返回笔记数量. Defaults to 10.
+
+    Returns:
+        str: 笔记列表
+    """
+    try:
+        page = await get_app_context(ctx).rednote.new_page()
+        notes = await get_app_context(ctx).rednote.search_notes(
+            page=page, params=SearchNotesParams(keyword=keyword, limit=limit)
+        )
+        return "\n".join([note.model_dump_json() for note in notes])
+    except Exception as e:
+        logging.error(f"Search notes failed: {e}")
+        return "搜索笔记失败"
