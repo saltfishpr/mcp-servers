@@ -32,8 +32,8 @@ jobs:
         id: create-version
         run: |
           VERSION=$(uv run --script scripts/release.py generate-version)
-          echo "version $VERSION"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version v$VERSION"
+          echo "version=v$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create notes
         run: |
@@ -91,7 +91,7 @@ jobs:
       - name: Commit changes
         id: commit
         run: |
-          VERSION="v${{ needs.create-metadata.outputs.version }}"
+          VERSION="${{ needs.create-metadata.outputs.version }}"
           git add -u
           if git diff-index --quiet HEAD; then
             echo "changes_made=false" >> $GITHUB_OUTPUT
