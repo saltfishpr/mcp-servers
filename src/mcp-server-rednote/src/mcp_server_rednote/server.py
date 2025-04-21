@@ -60,12 +60,15 @@ async def login(ctx: Context) -> str:
         str: 操作结果
     """
     try:
+        page = await get_app_context(ctx).rednote.new_page()
         await get_app_context(ctx).rednote.login()
-        await get_app_context(ctx).rednote.wait_for_login_success(timeout=60)
         return "登录成功"
     except Exception as e:
         logging.error(f"Login failed: {e}")
         return "登录失败"
+    finally:
+        if page:
+            await page.close()
 
 
 @mcp.tool()
@@ -88,3 +91,6 @@ async def search_notes(ctx: Context, keyword: str, limit: int = 10) -> str:
     except Exception as e:
         logging.error(f"Search notes failed: {e}")
         return "搜索笔记失败"
+    finally:
+        if page:
+            await page.close()

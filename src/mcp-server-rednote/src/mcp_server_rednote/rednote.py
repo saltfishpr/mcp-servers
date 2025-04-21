@@ -1,4 +1,3 @@
-import asyncio
 import base64
 import logging
 import urllib.parse
@@ -84,7 +83,6 @@ class RedNote(BaseBrowser):
             playwright=playwright,
             **kwargs,
         )
-        self.__event_login_success: asyncio.Event = asyncio.Event()
 
     async def __aenter__(self):
         return await super().__aenter__()
@@ -127,20 +125,24 @@ class RedNote(BaseBrowser):
             logger.error(e)
             return False
 
-    async def login(self) -> str:
+    async def login(self, page: Page) -> None:
         """
         导航到 explore 页面、获取二维码并等待登录
 
         Returns:
             str: 用于登录的 Base64 格式的二维码图片。
         """
-        page = await self._context.new_page()
         await page.goto(self.BASE_URL + "/explore")
         qr_code_base64 = await self.__get_qr_code(page)
-        # 使用异步函数在后台等待登录
-        asyncio.create_task(self.__wait_for_login(page))
-        # 立即返回二维码图片
-        return qr_code_base64
+        # 等待扫码
+        status_element = page.locator(".qrcode .status .status-text")
+        await status_element.wait_for()
+        status_text = (await status_element.text_content()).strip()
+        if status_text != "扫码成功":
+            raise RedNoteError(f"登录失败: {status_text}")
+        # 等待登录
+        user_element = page.locator(".side-bar .user")
+        await user_element.wait_for(timeout=60000)
 
     async def __get_qr_code(self, page: Page) -> str:
         # 等待二维码元素加载完成
@@ -161,38 +163,6 @@ class RedNote(BaseBrowser):
             # 无法获取src时，尝试截图
             screenshot_buffer = await qrcode_element.screenshot()
             return base64.b64encode(screenshot_buffer).decode("utf-8")
-
-    async def __wait_for_login(self, page: Page) -> None:
-        try:
-            # 等待扫码
-            status_element = page.locator(".qrcode .status .status-text")
-            await status_element.wait_for()
-            status_text = (await status_element.text_content()).strip()
-            if status_text != "扫码成功":
-                raise RedNoteError(f"登录失败: {status_text}")
-            # 等待登录
-            user_element = page.locator(".side-bar .user")
-            await user_element.wait_for(timeout=60000)
-            # TODO 登录次数过多可能需要人机校验
-            # 登录成功
-            await self._context.storage_state(path=self._storage_state_path)
-            self.__event_login_success.set()
-        except Exception as e:
-            logger.error(f"Login error: {e}")
-        finally:
-            await page.close()
-
-    async def wait_for_login_success(self, timeout: float) -> None:
-        """
-        等待登录成功的事件
-
-        Args:
-            timeout (float): 超时时间，单位为秒
-        """
-        try:
-            await asyncio.wait_for(self.__event_login_success.wait(), timeout)
-        except asyncio.TimeoutError:
-            raise RedNoteError("登录超时，请重新扫码登录")
 
     async def search_notes(
         self,
