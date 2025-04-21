@@ -1,6 +1,6 @@
 [project]
 name = "mcp-server-rednote"
-version = "0.1.1"
+version = "0.1.2"
 description = "RedNote MCP Server"
 readme = "README.md"
 authors = [{ name = "saltfishpr", email = "saltfishpr@gmail.com" }]
