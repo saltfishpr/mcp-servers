@@ -3,10 +3,10 @@ import os
 
 from playwright.async_api import Browser, BrowserContext, Locator, Page, Playwright
 
+logger = logging.getLogger(__name__).addHandler(logging.NullHandler())
+
 
 class BaseBrowser:
-    logger: logging.Logger = logging.getLogger(__name__)
-
     _playwright: Playwright
     _headless: bool
     _storage_state_path: str | None
@@ -20,15 +20,12 @@ class BaseBrowser:
         storage_state_path: str | None,
         headless: bool = False,
     ):
-        self.logger.info(
-            f"Args: headless={headless}, storage_state_path={storage_state_path}"
-        )
         self._playwright = playwright
         self._headless = headless
 
         if storage_state_path:
             self._storage_state_path = os.path.expanduser(storage_state_path)
-            self.logger.info(f"Storage state path: {self._storage_state_path}")
+            logger.info(f"Storage state path: {self._storage_state_path}")
             directory = os.path.dirname(self._storage_state_path)
             os.makedirs(directory, exist_ok=True)
         self._browser = None
@@ -40,15 +37,15 @@ class BaseBrowser:
             self._context = await self._browser.new_context(
                 storage_state=self._storage_state_path
             )
-            self.logger.info("Session loaded successfully")
+            logger.info("Session loaded successfully")
         except Exception as e:
-            self.logger.info(f"Failed to load session, creating a new one: {e}")
+            logger.info(f"Failed to load session, creating a new one: {e}")
             self._context = await self._browser.new_context()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if self._context:
-            self.logger.info("Saving session...")
+            logger.info("Saving session...")
             await self._context.storage_state(path=self._storage_state_path)
             await self._context.close()
         if self._browser:
@@ -84,9 +81,13 @@ class BaseBrowser:
 
             if current_content == previous_content:
                 stable_count += 1
+                logger.debug("[wait_for_stable] Stable count: %d", stable_count)
                 if stable_count >= threshold:
                     return True
             else:
+                logger.debug(
+                    "[wait_for_stable] Content changed, resetting stable count"
+                )
                 stable_count = stable_count = 0
 
             previous_content = current_content

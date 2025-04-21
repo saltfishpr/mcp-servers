@@ -35,7 +35,10 @@ class GetSongRequest(BaseModel):
 
 async def serve(qq: QQMusic) -> None:  # noqa: C901
     logger = logging.getLogger(__name__)
-    server = Server("mcp-server-qq-music")
+    server = Server(
+        "mcp-server-qq-music",
+        instructions="请在使用工具前校验登录状态",
+    )
 
     @server.list_tools()
     async def handle_list_tools() -> list[Tool]:

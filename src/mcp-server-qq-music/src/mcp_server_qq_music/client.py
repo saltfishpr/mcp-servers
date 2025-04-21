@@ -1,6 +1,10 @@
+import logging
+
 from mcp_server_lib import BaseBrowser
 from playwright.async_api import Locator, Page, Playwright
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 class CommentGroup(BaseModel):
@@ -68,7 +72,7 @@ class QQMusic(BaseBrowser):
             if await self.__is_user_logged_in(page=page):
                 return True
         except Exception as e:
-            self.logger.error(f"Error checking login status: {e}")
+            logger.error(f"Error checking login status: {e}")
         finally:
             if page:
                 await page.close()
@@ -82,7 +86,7 @@ class QQMusic(BaseBrowser):
             profile_herf = await login_btn.get_attribute("href")
             return profile_herf is not None
         except Exception as e:
-            self.logger.info(f"__is_user_logged_in: {e}")
+            logger.info(f"[__is_user_logged_in]: {e}")
             return False
 
     async def login(self, page: Page) -> None:
@@ -92,7 +96,7 @@ class QQMusic(BaseBrowser):
         await login_btn.wait_for()
 
         if await self.__is_user_logged_in(page=page):
-            self.logger.info("Already logged in")
+            logger.info("Already logged in")
             return
         await login_btn.click()
 
@@ -105,14 +109,11 @@ class QQMusic(BaseBrowser):
         await login_list.wait_for()
         # 等待登录列表加载
         face_count = await login_list.locator(".face").count()
-        if face_count == 0:
-            # 等待用户扫码
-            await page.wait_for_timeout(60000)
-        else:
+        if face_count != 0:
             # 已经登陆qq时，点击头像登录
             await login_list.locator(".face").first.click()
         # 等待登录框消失
-        await dialog_root.wait_for(state="detached")
+        await dialog_root.wait_for(state="detached", timeout=60000)
         # 再次检查登录状态
         if not await self.__is_user_logged_in(page=page):
             raise Exception("登录失败")
