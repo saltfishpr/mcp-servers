@@ -15,10 +15,10 @@ class Note(BaseModel):
     title: str  # 笔记标题
     cover: str  # 笔记封面
     author: str  # 作者
-    content: str | None  # 笔记内容
-    images: list[str] | None  # 笔记图片
-    tags: list[str] | None  # 笔记标签
-    date: datetime | None
+    content: str | None = None  # 笔记内容
+    images: list[str] | None = None  # 笔记图片
+    tags: list[str] | None = None  # 笔记标签
+    date: datetime | None = None
 
 
 class SearchNotesParams(BaseModel):

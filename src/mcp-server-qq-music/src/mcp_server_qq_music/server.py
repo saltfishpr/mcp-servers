@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from fastmcp import Context, FastMCP
 from playwright.async_api import async_playwright
 
-from .client import QQMusic
+from .browser import QQMusic
 from .settings import settings
 
 logging.basicConfig(
