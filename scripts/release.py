@@ -6,7 +6,6 @@
 #     "tomlkit>=0.13.2"
 # ]
 # ///
-import datetime
 import json
 import re
 import subprocess
@@ -117,9 +116,21 @@ def has_changes(path: Path, git_hash: GitHash) -> bool:
 
 
 def gen_version() -> Version:
-    """Generate version based on current date"""
-    now = datetime.datetime.now()
-    return Version(f"{now.year}.{now.month}.{now.day}")
+    # 找到最近一个 git tag
+    output = subprocess.run(
+        ["git", "describe", "--tags", "--abbrev=0"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    latest_tag = output.stdout.strip()
+    # 检查标签是否符合语义化版本格式 vX.Y.Z
+    match = re.match(r"v(\d+)\.(\d+)\.(\d+)", latest_tag)
+    if not match:
+        raise ValueError(f"Invalid semantic version tag: {latest_tag}")
+    major, minor, patch = map(int, match.groups())
+    new_version = f"{major}.{minor}.{patch + 1}"
+    return Version(new_version)
 
 
 def find_changed_packages(directory: Path, git_hash: GitHash) -> Iterator[Package]:
