@@ -1,9 +1,9 @@
 name: Automatic Release Creation
 
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: "0 10 * * *"
+  push:
+    branches:
+      - master
 
 jobs:
   create-metadata:
@@ -105,6 +105,7 @@ jobs:
 
   publish-pypi:
     needs: [update-packages, create-metadata]
+    if: ${{ needs.create-metadata.outputs.pypi_packages != '[]' }}
     strategy:
       fail-fast: false
       matrix:
@@ -147,6 +148,7 @@ jobs:
 
   publish-npm:
     needs: [update-packages, create-metadata]
+    if: ${{ needs.create-metadata.outputs.npm_packages != '[]'}}
     strategy:
       fail-fast: false
       matrix:
