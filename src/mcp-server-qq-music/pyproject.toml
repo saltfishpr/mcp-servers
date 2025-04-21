@@ -1,7 +1,7 @@
 [project]
 name = "mcp-server-qq-music"
 version = "0.1.0"
-description = "Add your description here"
+description = "QQ Music MCP Server"
 readme = "README.md"
 authors = [{ name = "saltfishpr", email = "saltfishpr@gmail.com" }]
 requires-python = ">=3.13"
