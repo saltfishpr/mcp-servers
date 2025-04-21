@@ -1,6 +1,6 @@
 [project]
 name = "mcp-server-qq-music"
-version = "0.1.0"
+version = "0.1.1"
 description = "QQ Music MCP Server"
 readme = "README.md"
 authors = [{ name = "saltfishpr", email = "saltfishpr@gmail.com" }]
