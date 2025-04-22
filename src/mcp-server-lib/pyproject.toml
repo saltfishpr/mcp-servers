@@ -1,6 +1,6 @@
 [project]
 name = "mcp-server-lib"
-version = "0.1.3"
+version = "0.1.4"
 description = "MCP Server Library"
 readme = "README.md"
 authors = [{ name = "saltfishpr", email = "saltfishpr@gmail.com" }]
