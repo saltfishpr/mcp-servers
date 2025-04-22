@@ -3,6 +3,7 @@ package = false
 
 [tool.uv.workspace]
 members = [
+    "examples/mcp-server-example",
     "src/mcp-server-lib",
     "src/mcp-server-rednote",
     "src/mcp-server-qq-music",

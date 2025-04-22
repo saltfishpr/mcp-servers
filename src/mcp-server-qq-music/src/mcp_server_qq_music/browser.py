@@ -1,7 +1,7 @@
 import logging
 
-from mcp_server_lib import BaseBrowser
-from playwright.async_api import Locator, Page, Playwright
+from mcp_server_lib import wait_for_stable
+from playwright.async_api import Browser, BrowserContext, Locator, Page
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -39,25 +39,15 @@ class Song(BaseModel):
     comments: list[CommentGroup] | None = None  # 评论组列表
 
 
-class QQMusic(BaseBrowser):
+class QQMusic:
     BASE_URL = "https://y.qq.com"
 
-    def __init__(
-        self,
-        *,
-        playwright: Playwright,
-        **kwargs,
-    ):
-        super().__init__(
-            playwright=playwright,
-            **kwargs,
-        )
+    browser: Browser
+    context: BrowserContext
 
-    async def __aenter__(self):
-        return await super().__aenter__()
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await super().__aexit__(exc_type, exc_val, exc_tb)
+    def __init__(self, browser: Browser, context: BrowserContext):
+        self.browser = browser
+        self.context = context
 
     async def check_login(self) -> bool:
         """
@@ -67,12 +57,12 @@ class QQMusic(BaseBrowser):
             bool: 如果用户已登录返回 True，否则返回 False。
         """
         try:
-            page = await self.new_page()
-            await page.goto(QQMusic.BASE_URL)
+            page = await self.context.new_page()
+            await page.goto(QQMusic.BASE_URL, wait_until="networkidle")
             if await self.__is_user_logged_in(page=page):
                 return True
-        except Exception as e:
-            logger.error(f"Error checking login status: {e}")
+        except Exception:
+            logger.exception("Error checking login status")
         finally:
             if page:
                 await page.close()
@@ -82,11 +72,11 @@ class QQMusic(BaseBrowser):
         login_btn = page.locator(".mod_header .top_login__link")
         await login_btn.wait_for()
         try:
-            await self.wait_for_stable(page=page, locator=login_btn)
+            await wait_for_stable(page, login_btn)
             profile_herf = await login_btn.get_attribute("href")
             return profile_herf is not None
-        except Exception as e:
-            logger.info(f"[__is_user_logged_in]: {e}")
+        except Exception:
+            logger.exception("Error checking login status")
             return False
 
     async def login(self, page: Page) -> None:

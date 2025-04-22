@@ -4,6 +4,7 @@ requires-python = ">=3.13"
 
 [manifest]
 members = [
+    "mcp-server-example",
     "mcp-server-lib",
     "mcp-server-qq-music",
     "mcp-server-rednote",
@@ -245,8 +246,29 @@ cli = [
 ]
 
 [[package]]
+name = "mcp-server-example"
+version = "0.1.0"
+source = { editable = "examples/mcp-server-example" }
+dependencies = [
+    { name = "fastmcp" },
+    { name = "mcp", extra = ["cli"] },
+    { name = "mcp-server-lib" },
+    { name = "playwright" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastmcp", specifier = ">=2.2.1" },
+    { name = "mcp", extras = ["cli"], specifier = ">=1.0.0" },
+    { name = "mcp-server-lib", editable = "src/mcp-server-lib" },
+    { name = "playwright", specifier = ">=1.51.0" },
+    { name = "pydantic", specifier = ">=2.0.0" },
+]
+
+[[package]]
 name = "mcp-server-lib"
-version = "0.1.2"
+version = "0.1.3"
 source = { editable = "src/mcp-server-lib" }
 dependencies = [
     { name = "playwright" },
