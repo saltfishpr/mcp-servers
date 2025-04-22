@@ -4,8 +4,8 @@ import urllib.parse
 from collections.abc import AsyncGenerator
 from datetime import datetime
 
-from mcp_server_lib import BaseBrowser
-from playwright.async_api import Page, Playwright
+from mcp_server_lib import wait_for_stable
+from playwright.async_api import Browser, BrowserContext, Page
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -15,23 +15,11 @@ class Note(BaseModel):
     title: str  # 笔记标题
     cover: str  # 笔记封面
     author: str  # 作者
+    likes: str  # 点赞数
     content: str | None = None  # 笔记内容
     images: list[str] | None = None  # 笔记图片
     tags: list[str] | None = None  # 笔记标签
     date: datetime | None = None
-
-
-class SearchNotesParams(BaseModel):
-    keyword: str  # 搜索关键词
-    limit: int = 10  # 返回的笔记数量限制
-
-
-class SearchNotesResult(BaseModel):
-    data_idx: int  # 笔记索引
-    title: str  # 笔记标题
-    cover: str | None = None  # 笔记封面
-    author: str  # 作者
-    likes: str  # 点赞数
 
 
 class RedNoteError(Exception):
@@ -66,25 +54,15 @@ class RedNoteApiError(Exception):
         )
 
 
-class RedNote(BaseBrowser):
+class RedNote:
     BASE_URL = "https://www.xiaohongshu.com"
 
-    def __init__(
-        self,
-        *,
-        playwright: Playwright,
-        **kwargs,
-    ):
-        super().__init__(
-            playwright=playwright,
-            **kwargs,
-        )
+    browser: Browser
+    context: BrowserContext
 
-    async def __aenter__(self):
-        return await super().__aenter__()
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await super().__aexit__(exc_type, exc_val, exc_tb)
+    def __init__(self, browser: Browser, context: BrowserContext):
+        self.browser = browser
+        self.context = context
 
     async def is_user_logged_in(self) -> bool:
         """
@@ -94,7 +72,7 @@ class RedNote(BaseBrowser):
             bool: 是否已登录
         """
         try:
-            resp = await self._context.request.get(
+            resp = await self.context.request.get(
                 "https://edith.xiaohongshu.com/api/sns/web/v2/user/me"
             )
             if not resp.ok:
@@ -115,8 +93,8 @@ class RedNote(BaseBrowser):
             if respBody.get("data", {}).get("guest", True):
                 return False
             return True
-        except Exception as e:
-            logger.error(e)
+        except Exception:
+            logger.exception("check login failed")
             return False
 
     async def login(self, page: Page) -> None:
@@ -161,8 +139,9 @@ class RedNote(BaseBrowser):
     async def search_notes(
         self,
         page: Page,
-        params: SearchNotesParams,
-    ) -> list[SearchNotesResult]:
+        keyword: str,
+        limit: int = 10,
+    ) -> list[Note]:
         """
         搜索小红书笔记，获取笔记列表
 
@@ -173,16 +152,14 @@ class RedNote(BaseBrowser):
         Returns:
             list[SearchNotesResult]: 笔记列表
         """
-        encoded_keyword = urllib.parse.quote(params.keyword)
+        encoded_keyword = urllib.parse.quote(keyword)
         await page.goto(f"{self.BASE_URL}/search_result?keyword={encoded_keyword}")
         result = []
-        async for note in self.__load_notes(page, params.limit):
+        async for note in self.__load_notes(page, limit):
             result.append(note)
         return result
 
-    async def __load_notes(
-        self, page: Page, limit: int
-    ) -> AsyncGenerator[SearchNotesResult]:
+    async def __load_notes(self, page: Page, limit: int) -> AsyncGenerator[Note]:
         data_idx_set = set()
 
         while True:
@@ -190,7 +167,7 @@ class RedNote(BaseBrowser):
             await feeds_container.wait_for(state="visible", timeout=10000)
             feeds = feeds_container.locator("> section")
             # 等待内容稳定
-            await self.wait_for_stable(page=page, locator=feeds.first)
+            await wait_for_stable(page=page, locator=feeds.first)
             feeds_count = await feeds.count()
             for i in range(feeds_count):
                 section = feeds.nth(i)
@@ -219,8 +196,7 @@ class RedNote(BaseBrowser):
                 likes_element = section.locator(".like-wrapper .count")
                 likes = await likes_element.inner_text()
                 logger.info(f"笔记 {data_idx}：{title}, 作者 {author}，点赞数 {likes}")
-                yield SearchNotesResult(
-                    data_idx=data_idx,
+                yield Note(
                     title=title,
                     cover=cover,
                     author=author,

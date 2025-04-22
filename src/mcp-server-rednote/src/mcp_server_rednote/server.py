@@ -4,15 +4,18 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 
 from fastmcp import Context, FastMCP
+from mcp_server_lib import browser_manager
 from playwright.async_api import async_playwright
 
-from .browser import RedNote, SearchNotesParams
+from .browser import RedNote
 from .settings import settings
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s",
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -23,10 +26,10 @@ class AppContext:
 @asynccontextmanager
 async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     async with async_playwright() as p:
-        async with RedNote(
-            playwright=p, headless=False, storage_state_path=settings.storage_state_path
-        ) as rednote:
-            yield AppContext(rednote=rednote)
+        async with browser_manager(
+            playwright=p, storage_state_path=settings.storage_state_path
+        ) as (browser, context):
+            yield AppContext(rednote=RedNote(browser, context))
 
 
 mcp = FastMCP(
@@ -60,11 +63,11 @@ async def login(ctx: Context) -> str:
         str: 操作结果
     """
     try:
-        page = await get_app_context(ctx).rednote.new_page()
+        page = await get_app_context(ctx).rednote.context.new_page()
         await get_app_context(ctx).rednote.login(page=page)
         return "登录成功"
-    except Exception as e:
-        logging.error(f"Login failed: {e}")
+    except Exception:
+        logger.exception("Login failed")
         return "登录失败"
     finally:
         if page:
@@ -83,13 +86,13 @@ async def search_notes(ctx: Context, keyword: str, limit: int = 10) -> str:
         str: 笔记列表
     """
     try:
-        page = await get_app_context(ctx).rednote.new_page()
+        page = await get_app_context(ctx).rednote.context.new_page()
         notes = await get_app_context(ctx).rednote.search_notes(
-            page=page, params=SearchNotesParams(keyword=keyword, limit=limit)
+            page=page, keyword=keyword, limit=limit
         )
         return "\n".join([note.model_dump_json() for note in notes])
-    except Exception as e:
-        logging.error(f"Search notes failed: {e}")
+    except Exception:
+        logger.exception("Search notes failed")
         return "搜索笔记失败"
     finally:
         if page:

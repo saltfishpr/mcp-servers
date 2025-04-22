@@ -1,5 +1,3 @@
-from .browser import BaseBrowser
+from .browser import browser_manager, wait_for_stable
 
-__all__ = [
-    "BaseBrowser",
-]
+__all__ = ["browser_manager", "wait_for_stable"]
