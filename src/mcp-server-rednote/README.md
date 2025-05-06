@@ -6,6 +6,12 @@
 - login
 - search notes
 
+## Prerequire
+
+```shell
+uvx playwright install
+```
+
 ## Usage
 
 ```json

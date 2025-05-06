@@ -7,6 +7,12 @@
 - search songs
 - get song detail
 
+## Prerequire
+
+```shell
+uvx playwright install
+```
+
 ## Usage
 
 ```json
